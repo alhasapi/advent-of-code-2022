@@ -2,9 +2,22 @@ module Lib where
 
 
 
-main :: IO ()
-main =
-  fst
+part1 :: IO ()
+part1 =
+    maximum
+  . (sum <$>)
+  . mtakeW [] []
+  . lines <$> readFile "input.txt" >>= print
+  where
+    mtakeW acc _    []      = acc
+    mtakeW acc acc' ("":xs) = mtakeW (acc ++ [(read :: String -> Integer) <$> acc']) [] xs
+    mtakeW acc acc' (x:xs)  = mtakeW acc (x:acc') xs
+
+
+
+part2 :: IO ()
+part2 =
+  snd
   . maxDeer
   . zip [1..]
   . (sum <$>)
