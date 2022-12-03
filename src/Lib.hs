@@ -2,6 +2,7 @@ module Lib where
 
 import Data.List
 import Data.Ord
+import Data.Char
 
 p1part1 :: IO ()
 p1part1 =
@@ -88,3 +89,38 @@ p2part2 =
   . lines <$> readFile "input2.txt" >>= print
   where
     pairs line = (head line, line !! 2)
+
+p3part1 :: IO ()
+p3part1 =
+      sum
+    . ( priority
+      . head
+      . uncurry intersect
+      . split
+        <$>
+      )
+    . lines <$> readFile "input3.txt" >>= print
+  where
+    split line = splitAt (length line `div` 2) line
+
+priority :: Char -> Int
+priority letter =
+  if ord letter >= ord 'a' && ord letter <= ord 'z' then
+      ord letter - ord 'a' + 1
+  else
+      ord letter + 27 - ord 'A'
+
+p3part2 :: IO ()
+p3part2 =
+      sum
+    . (  priority
+       . head
+       . foldl1 intersect
+        <$>
+      )
+    . by3 []
+    . lines <$> readFile "input3.txt" >>= print
+  where
+    by3 acc  []           = acc
+    by3 acc (x1:x2:x3:xs) = by3 ([x1,x2,x3]:acc) xs
+    by3 acc ys = ys:acc
