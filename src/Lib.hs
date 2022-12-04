@@ -124,3 +124,45 @@ p3part2 =
     by3 acc  []           = acc
     by3 acc (x1:x2:x3:xs) = by3 ([x1,x2,x3]:acc) xs
     by3 acc ys = ys:acc
+
+p4part1 :: IO ()
+p4part1 =
+        length
+      . filter isFullyContained
+      . (  map (read :: String -> Int)
+         . lines
+         . (fn <$>) <$>
+        )
+      . lines <$> readFile "input4.txt" >>= print
+  where
+    isFullyContained [from, to, from', to'] =
+        (from' >= from && to' <= to && to' >= from)
+      || (from >= from' && to <= to' && to >= from')
+    isFullyContained _ = undefined
+
+    fn q =
+      if q `elem` ['-', ','] then
+        '\n'
+      else
+        q
+
+
+p4part2 :: IO ()
+p4part2 =
+       -- length
+        filter overlap
+      . (  map (read :: String -> Int)
+         . lines
+         . (fn <$>) <$>
+        )
+      . lines <$> readFile "input4.txt" >>= print
+  where
+    overlap [from, to, from', to'] =
+        (from >= from' && from <= to') && (to >= from' && to >= to') ||
+        (from'>= from  && from' <= to) && (to' >= from && to' >= to)
+
+    fn q =
+      if q `elem` ['-', ','] then
+        '\n'
+      else
+        q
