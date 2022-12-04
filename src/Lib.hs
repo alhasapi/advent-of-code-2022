@@ -149,8 +149,8 @@ p4part1 =
 
 p4part2 :: IO ()
 p4part2 =
-       -- length
-        filter overlap
+        length
+      . filter overlap
       . (  map (read :: String -> Int)
          . lines
          . (fn <$>) <$>
@@ -158,8 +158,8 @@ p4part2 =
       . lines <$> readFile "input4.txt" >>= print
   where
     overlap [from, to, from', to'] =
-        (from >= from' && from <= to') && (to >= from' && to >= to') ||
-        (from'>= from  && from' <= to) && (to' >= from && to' >= to)
+        (from >= from' && from <= to') || (from'>= from  && from' <= to)
+    overlap _ = undefined
 
     fn q =
       if q `elem` ['-', ','] then
