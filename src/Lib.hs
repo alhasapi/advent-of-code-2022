@@ -166,3 +166,42 @@ p4part2 =
         '\n'
       else
         q
+
+p5part1 :: IO ()
+p5part1 = do
+  (objects, (_:operations)) <- split . lines <$> readFile "input5.txt"
+  let cstacks = clean $ init objects
+  let stacks = (filter (/= "") $ filter (/= ' ') <$> transpose cstacks)
+  let ops = (parseOp operations)
+  print stacks
+  print $ intersperse ' ' $ map head $ foldl move stacks ops
+  where
+     split items =
+       let (Just idx) = elemIndex "" items
+       in splitAt idx items
+     clean = (map (\q -> if  q `elem` "[]" then ' ' else  q) <$>)
+     parseOp ops = map (read :: String -> Int) . filter (`notElem` ["move", "to", "from"]) . words  <$> ops
+     change index with list = [
+       list !! i | i <- [0..index-1]
+       ] ++ [with] ++ [
+         list !! i | i <- [index+1..length list - 1]]
+
+     move :: [String]
+          -> [Int]
+          -> [String]
+     move stacks [0, _, _]          = stacks
+     move stacks [number, from, to] =
+       let istack = stacks !! (from - 1)
+           dstack = stacks !! (to - 1)
+           newIStack = tail istack
+           target    = head istack
+           newDStack = target:dstack
+           updatedIStack = change (from - 1) newIStack stacks
+           updatedDStack = change (to - 1)  newDStack updatedIStack
+        in move updatedDStack [number - 1, from,  to]
+
+
+        -- get last element of from
+        -- append that element to 'to'
+
+
