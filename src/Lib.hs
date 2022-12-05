@@ -172,36 +172,83 @@ p5part1 = do
   (objects, (_:operations)) <- split . lines <$> readFile "input5.txt"
   let cstacks = clean $ init objects
   let stacks = (filter (/= "") $ filter (/= ' ') <$> transpose cstacks)
-  let ops = (parseOp operations)
+  let ops = parseOp operations
   print stacks
-  print $ intersperse ' ' $ map head $ foldl move stacks ops
+  print $ map head $ foldl move stacks ops
   where
-     split items =
-       let (Just idx) = elemIndex "" items
-       in splitAt idx items
      clean = (map (\q -> if  q `elem` "[]" then ' ' else  q) <$>)
-     parseOp ops = map (read :: String -> Int) . filter (`notElem` ["move", "to", "from"]) . words  <$> ops
-     change index with list = [
-       list !! i | i <- [0..index-1]
-       ] ++ [with] ++ [
-         list !! i | i <- [index+1..length list - 1]]
 
-     move :: [String]
+split items =
+  let (Just idx) = elemIndex "" items
+  in splitAt idx items
+
+parseOp ops =
+    map (read :: String -> Int)
+  . filter (`notElem` ["move", "to", "from"])
+  . words
+  <$> ops
+
+slice from to list = [
+    list !! i | i <- [from..to]
+  ]
+
+change index with list =
+  slice 0 (index - 1) list
+    ++ [with] ++
+  slice (index + 1) (length list - 1) list
+-- change index with list = [
+--   list !! i | i <- [0..index-1]
+--   ] ++ [with] ++ [
+--     list !! i | i <- [index+1..length list - 1]]
+
+move :: [String]
+     -> [Int]
+     -> [String]
+move stacks [0, _, _]          = stacks
+move stacks [number, from, to] =
+  let istack = stacks !! (from - 1)
+      dstack = stacks !! (to - 1)
+      newIStack = tail istack
+      target    = head istack
+      newDStack = target:dstack
+      updatedIStack = change (from - 1) newIStack stacks
+      updatedDStack = change (to - 1)  newDStack updatedIStack
+    in move updatedDStack [number - 1, from,  to]
+
+debugfoldl _ init' [] acc = (init', acc)
+debugfoldl fn init' (x:xs) acc = debugfoldl fn (fn init' x) xs (acc ++ [fn init' x])
+
+
+p5part2 :: IO ()
+p5part2 = do
+  (objects, (_:operations)) <- split . lines <$> readFile "input5.txt"
+  let cstacks = clean $ init objects
+  let stacks = (filter (/= "") $ filter (/= ' ') <$> transpose cstacks)
+  let ops = parseOp operations
+  print stacks
+  --let (res, acc) = debugfoldl move' stacks ops []
+  -- mapM_ print acc
+  print $ map head $ foldl move' stacks ops
+
+  where
+     clean = (map (\q -> if  q `elem` "[]" then ' ' else  q) <$>)
+
+     move' :: [String]
           -> [Int]
           -> [String]
-     move stacks [0, _, _]          = stacks
-     move stacks [number, from, to] =
+     move' stacks [0, _, _]             = stacks
+     move' stacks instruction@[1, _, _] = move stacks instruction
+     move' stacks [number, from, to]    =
        let istack = stacks !! (from - 1)
            dstack = stacks !! (to - 1)
-           newIStack = tail istack
-           target    = head istack
-           newDStack = target:dstack
+
+           targets = slice 0 (number - 1) istack
+
+           newIStack = slice number (length istack - 1) istack
+           newDStack = targets ++ dstack
+
            updatedIStack = change (from - 1) newIStack stacks
-           updatedDStack = change (to - 1)  newDStack updatedIStack
-        in move updatedDStack [number - 1, from,  to]
-
-
-        -- get last element of from
-        -- append that element to 'to'
-
-
+           updatedDStack = change (to   - 1) newDStack updatedIStack
+        in updatedDStack
+     move' _ _  = error "The Unexpected Happened Anyway: the second argument must always be of length 3"
+     -- should be seen while parsing.
