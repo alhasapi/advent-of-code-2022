@@ -3,6 +3,7 @@ module Lib where
 import Data.List
 import Data.Ord
 import Data.Char
+import qualified Data.Set as S
 
 p1part1 :: IO ()
 p1part1 =
@@ -226,9 +227,9 @@ p5part2 = do
   let stacks = (filter (/= "") $ filter (/= ' ') <$> transpose cstacks)
   let ops = parseOp operations
   print stacks
-  --let (res, acc) = debugfoldl move' stacks ops []
-  -- mapM_ print acc
-  print $ map head $ foldl move' stacks ops
+  --print $ map head $ debugfoldl move' stacks ops []
+  let (res, acc) = debugfoldl move' stacks ops []
+  print $ map head res
 
   where
      clean = (map (\q -> if  q `elem` "[]" then ' ' else  q) <$>)
@@ -250,5 +251,19 @@ p5part2 = do
            updatedIStack = change (from - 1) newIStack stacks
            updatedDStack = change (to   - 1) newDStack updatedIStack
         in updatedDStack
-     move' _ _  = error "The Unexpected Happened Anyway: the second argument must always be of length 3"
-     -- should be seen while parsing.
+     move' _ _  =
+       error "The Unexpected Happened Anyway: the second argument must always be of length 3" -- should be handled while parsing.
+
+-- look for a sequence of distinct letters
+
+isMarker idx stream =
+  let target = slice idx (idx + 3) stream
+  in if isDisinct target then
+    idx + 4
+   else
+    isMarker (idx + 1) stream
+
+isDisinct xs =  length xs == length (S.toList . S.fromList $ xs)
+--p6part1 :: IO ()
+p6part1 = do
+  isMarker 0 <$> readFile "input6.txt" >>= print
