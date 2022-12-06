@@ -256,14 +256,25 @@ p5part2 = do
 
 -- look for a sequence of distinct letters
 
-isMarker idx stream =
+markerPosition idx stream =
   let target = slice idx (idx + 3) stream
   in if isDisinct target then
     idx + 4
    else
-    isMarker (idx + 1) stream
+    markerPosition (idx + 1) stream
+
+messagePosition idx stream =
+  let target = slice idx (idx + 13) stream
+  in if isDisinct target then
+    idx + 14
+   else
+    messagePosition (idx + 1) stream
 
 isDisinct xs =  length xs == length (S.toList . S.fromList $ xs)
 --p6part1 :: IO ()
 p6part1 = do
-  isMarker 0 <$> readFile "input6.txt" >>= print
+  markerPosition 0 <$> readFile "input6.txt" >>= print
+
+
+p6part2 = do
+  messagePosition 0 <$> readFile "input6.txt" >>= print
