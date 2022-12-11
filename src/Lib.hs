@@ -421,3 +421,38 @@ p7part2  = do
        let freeSpace = 70000000 - maxSize
        in print . minimum $ filter (\q -> freeSpace + q >= 30000000) (snd <$> M.toList dc)
      Nothing -> print "Error: Missing root directory"
+
+neighbors (k, m) gridSize grid
+  = [ [(grid !!i) !! m | i <- [0..k-1]],              -- top
+      [(grid !!i) !! m | i <- [k+1..gridSize - 1]],   -- down
+      [(grid !!k) !! i | i <- [0..m-1]],              -- left
+      [(grid !!k) !! i | i <- [m+1..gridSize - 1]]    -- right
+    ]
+
+isVisible (i, j) grid
+  = L.any  (==True) $ (L.all (< val) <$>) $ neighbors (i, j) (length grid) grid
+  where
+    val = (grid !! i) !! j
+
+candidates grid =
+  let gridSize = length grid
+      limit    = gridSize - 2
+  in [ (i, j) | i <- [1..limit], j <- [1..limit], isVisible (i, j) grid ]
+
+visibleTreeLength grid
+  = length (candidates grid) + 4 * (length grid - 1)
+
+p8part1 :: IO Int
+p8part1 =
+       visibleTreeLength
+    . ((toInt .
+       (:[])
+        <$>)
+        <$>) . lines <$> readFile "input8.txt"
+
+--p8part2 :: IO Int
+p8part2 =
+     ((toInt .
+       (:[])
+        <$>)
+        <$>) . lines <$> readFile "input8.txt"
