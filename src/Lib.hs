@@ -341,18 +341,14 @@ p6part2 =
   messagePosition 0 <$> readFile "input6.txt" >>= print
 
 
---   sum
--- . filter (<= 100000)
---   length
--- . (sum . (toInt .head . words <$>) <$>)
---p7part1 :: IO ()
 p7part1 = do
    ast <- parse <$> readFile "input7.txt"
-   let (stacks, dc) = fn ast
-   return dc
-
-  where
+   let (_, dc) = fn ast
+   print $ sum $ filter (<=100000) (snd <$> M.toList dc)
+   where
     fn = exec [] emptyMap []
+       . (++ [["cd", ".."]])
+       . (++ [["cd", ".."]])
        . (++ [["cd", ".."]])
 
     parse =
@@ -397,31 +393,23 @@ exec stack dc astack ([size,  _]:xs)
         (Just val) -> exec stack (M.insert dr (size'+val) dc) astack xs
         Nothing    -> exec stack (M.insert dr size' dc) astack xs
 
-isPrefix candidate path =
-  L.all (uncurry (==)) $ zip candidate (fst path)
+p7part2  :: IO ()
+p7part2  = do
+   ast <- parse <$> readFile "input7.txt"
+   let (astack, dc) = fn ast
+   let (Just maxSize) = M.lookup "/" dc
+   let freeSpace = 70000000 - maxSize
+   print freeSpace
+   print maxSize
+   print $ minimum $ filter (\q ->  freeSpace + q >= 30000000) (snd <$> M.toList dc)
 
-prefs n dc acc =
-  if n < length dc then
-    let interval = slice n (length dc - 1) dc
-        selected = filter (isPrefix (fst (dc !! n))) interval
-    in prefs (n + length selected) dc (selected:acc)
-  else
-     acc
+   where
+    fn = exec [] emptyMap []
+       . (++ [["cd", ".."]])
+       . (++ [["cd", ".."]])
+       . (++ [["cd", ".."]])
 
-
-sizes :: Num b => [(String, b)] -> [(String, b)]
-sizes candidates = fn <$> zip [0..length candidates - 1] candidates
-  where
-    fn (idx, (m, v)) =
-      if length candidates == 1 then
-        (m, v)
-      else
-        (m, v + sum (snd <$> slice idx (length candidates - 1) candidates))
-
-grail candidates
-  = filter (<= 100000) $ snd <$> candidates
-
--- messiah :: M.Map String Int -> M.Map String Int
--- messiah dc =
---   let keys = M.keys dc
---   in 
+    parse =
+         map words
+       . lines
+       . map (\z -> if z == '$' then ' ' else z)
