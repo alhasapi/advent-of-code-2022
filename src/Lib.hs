@@ -341,20 +341,27 @@ p6part2 =
   messagePosition 0 <$> readFile "input6.txt" >>= print
 
 
-p7part1 = do
-   ast <- parse <$> readFile "input7.txt"
-   let (_, dc) = fn ast
-   print $ sum $ filter (<=100000) (snd <$> M.toList dc)
-   where
-    fn = exec [] emptyMap []
-       . (++ [["cd", ".."]])
-       . (++ [["cd", ".."]])
-       . (++ [["cd", ".."]])
+p7part1 :: IO ()
+p7part1 =
+     print
+   . sum
+   . filter (<=100000)
+   . (snd <$>)
+   . M.toList =<< execute . parseInput7 <$> readFile "input7.txt"
 
-    parse =
-         map words
-       . lines
-       . map (\z -> if z == '$' then ' ' else z)
+execute :: [[String]]
+        -> M.Map String Int
+execute = exec [] emptyMap []
+    . (++ [["cd", ".."]])
+    . (++ [["cd", ".."]])
+    . (++ [["cd", ".."]])
+
+parseInput7 :: String
+            -> [[String]]
+parseInput7 =
+      map words
+    . lines
+    . map (\z -> if z == '$' then ' ' else z)
 
 toInt :: String -> Int
 toInt = read
@@ -362,32 +369,45 @@ toInt = read
 emptyMap :: M.Map String Int
 emptyMap = M.fromList []
 
-exec _     dc astack  [] = (astack, dc)
-exec stack dc astack (["cd", ".."]:xs) = exec (init stack) newDc astack xs
+toPath :: [String]
+       -> String
+toPath = L.intercalate "/"
+
+exec :: [String]
+     -> M.Map String Int
+     -> [[String]]
+     -> [[String]]
+     -> M.Map String Int
+exec _     dc astack  []
+  = dc
+exec stack dc astack (["cd", ".."]:xs)
+  = exec (init stack) newDc astack xs
   where
     newStack = init stack
     newDc    =
-      let dr' = L.intercalate "/" stack
-          dr = L.intercalate "/" newStack
+      let dr' = toPath stack
+          dr  = toPath newStack
       in case (M.lookup dr' dc, M.lookup dr dc) of
         (Just val, Just val') -> M.insert dr (val + val') dc
         (Just val, Nothing)   -> M.insert dr val dc
         _                     -> dc
-exec stack dc astack (["cd",  dr]:xs)  =
-  if currentStack `notElem` astack then
+exec stack dc astack (["cd",  dr]:xs)
+  = if currentStack `notElem` astack then
     exec currentStack newDc (currentStack:astack) xs
   else
     exec currentStack newDc astack xs
   where
     currentStack = stack ++ [dr]
     newDc =
-      let dr' = L.intercalate "/" currentStack
+      let dr' = toPath currentStack
       in M.insert dr' 0 dc
 
-exec stack dc astack (["ls"]:xs)      = exec stack dc astack xs
-exec stack dc astack (["dir",  _]:xs) = exec stack dc astack xs
+exec stack dc astack (["ls"]:xs)
+  = exec stack dc astack xs
+exec stack dc astack (["dir",  _]:xs)
+  = exec stack dc astack xs
 exec stack dc astack ([size,  _]:xs)
-  = let dr    = L.intercalate "/" stack
+  = let dr    = toPath stack
         size' = toInt size
     in case M.lookup dr dc of
         (Just val) -> exec stack (M.insert dr (size'+val) dc) astack xs
@@ -395,21 +415,9 @@ exec stack dc astack ([size,  _]:xs)
 
 p7part2  :: IO ()
 p7part2  = do
-   ast <- parse <$> readFile "input7.txt"
-   let (astack, dc) = fn ast
-   let (Just maxSize) = M.lookup "/" dc
-   let freeSpace = 70000000 - maxSize
-   print freeSpace
-   print maxSize
-   print $ minimum $ filter (\q ->  freeSpace + q >= 30000000) (snd <$> M.toList dc)
-
-   where
-    fn = exec [] emptyMap []
-       . (++ [["cd", ".."]])
-       . (++ [["cd", ".."]])
-       . (++ [["cd", ".."]])
-
-    parse =
-         map words
-       . lines
-       . map (\z -> if z == '$' then ' ' else z)
+   dc <- execute . parseInput7 <$> readFile "input7.txt"
+   case M.lookup "/" dc of
+     Just maxSize ->
+       let freeSpace = 70000000 - maxSize
+       in print . minimum $ filter (\q -> freeSpace + q >= 30000000) (snd <$> M.toList dc)
+     Nothing -> print "Error: Missing root directory"
