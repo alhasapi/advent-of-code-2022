@@ -422,15 +422,17 @@ p7part2  = do
        in print . minimum $ filter (\q -> freeSpace + q >= 30000000) (snd <$> M.toList dc)
      Nothing -> print "Error: Missing root directory"
 
-neighbors (k, m) gridSize grid
-  = [ [(grid !!i) !! m | i <- [0..k-1]],              -- top
+neighbors (k, m) grid
+  = [ [(grid !!i) !! m | i <- reverse [0..k-1]],              -- top
       [(grid !!i) !! m | i <- [k+1..gridSize - 1]],   -- down
-      [(grid !!k) !! i | i <- [0..m-1]],              -- left
+      [(grid !!k) !! i | i <- reverse [0..m-1]],              -- left
       [(grid !!k) !! i | i <- [m+1..gridSize - 1]]    -- right
     ]
+  where
+    gridSize = length grid
 
 isVisible (i, j) grid
-  = L.any  (==True) $ (L.all (< val) <$>) $ neighbors (i, j) (length grid) grid
+  = L.any  (==True) $ (L.all (< val) <$>) $ neighbors (i, j) grid
   where
     val = (grid !! i) !! j
 
@@ -443,16 +445,37 @@ visibleTreeLength grid
   = length (candidates grid) + 4 * (length grid - 1)
 
 p8part1 :: IO Int
-p8part1 =
-       visibleTreeLength
-    . ((toInt .
-       (:[])
-        <$>)
-        <$>) . lines <$> readFile "input8.txt"
+p8part1
+  =
+    visibleTreeLength
+  . parseInput8 <$> readFile "input8.txt"
+
+scores grid =
+  let gridSize = length grid
+  in maximum [
+        product $ viewDistance (val i j) [] <$> neighbors (i, j) grid |
+              i <- [0..gridSize - 1],
+              j <- [0..gridSize - 1]
+     ]
+  where
+    val i j = (grid !! i) !! j
+
+
+parseInput8 =
+  ((toInt . (:[]) <$>) <$>) . lines
+
+viewDistance _ acc [] = length acc
+viewDistance  val acc (x:xs)
+  = if x >= val then
+      length (x:acc)
+    else
+      viewDistance val (x:acc) xs
 
 --p8part2 :: IO Int
 p8part2 =
-     ((toInt .
-       (:[])
-        <$>)
-        <$>) . lines <$> readFile "input8.txt"
+       scores
+     . ((toInt .
+         (:[])
+          <$>)
+          <$>) . lines <$> readFile "input8.txt"
+
